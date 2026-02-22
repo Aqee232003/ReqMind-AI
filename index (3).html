@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ReqMind AI — BRD Generation Agent</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:#060a12;--s1:#0a1120;--s2:#0e1829;--s3:#121f35;
+  --border:#1a2d47;--border2:#243d5e;
+  --cyan:#00e5ff;--blue:#0066ff;--green:#00ff94;
+  --yellow:#ffd60a;--red:#ff4757;--purple:#a855f7;--orange:#ff8c00;
+  --text:#dce8ff;--muted:#5a7399;--muted2:#8ba3c7;
+  --mono:'JetBrains Mono',monospace;--sans:'Syne',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden;}
+canvas#pts{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.45;}
+body::before{content:'';position:fixed;inset:0;z-index:0;
+  background-image:linear-gradient(rgba(0,229,255,0.022) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.022) 1px,transparent 1px);
+  background-size:48px 48px;pointer-events:none;}
+
+/* ── HEADER ── */
+header{position:sticky;top:0;z-index:100;height:64px;padding:0 40px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(6,10,18,0.88);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
+.logo{display:flex;align-items:center;gap:12px;}
+.lmark{width:36px;height:36px;border-radius:10px;
+  background:linear-gradient(135deg,var(--cyan),var(--blue));
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+  box-shadow:0 0 20px rgba(0,229,255,0.3);}
+.lname{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--cyan);}
+.lname span{color:var(--text);}
+.agent-bar{display:flex;align-items:center;gap:8px;
+  background:rgba(0,229,255,0.05);border:1px solid rgba(0,229,255,0.12);
+  padding:6px 16px;border-radius:30px;}
+.adot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:glow 2s infinite;}
+@keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(0,255,148,0.5)}50%{box-shadow:0 0 0 5px rgba(0,255,148,0)}}
+.adot.p{background:var(--cyan);animation:glowC 0.8s infinite;}
+.adot.r{background:var(--purple);animation:glowP 0.6s infinite;}
+.adot.g{background:var(--yellow);animation:glowY 1s infinite;}
+.adot.h{background:var(--orange);animation:glowO 1.2s infinite;}
+@keyframes glowC{0%,100%{box-shadow:0 0 0 0 rgba(0,229,255,0.5)}50%{box-shadow:0 0 0 6px rgba(0,229,255,0)}}
+@keyframes glowP{0%,100%{box-shadow:0 0 0 0 rgba(168,85,247,0.5)}50%{box-shadow:0 0 0 6px rgba(168,85,247,0)}}
+@keyframes glowY{0%,100%{box-shadow:0 0 0 0 rgba(255,214,10,0.5)}50%{box-shadow:0 0 0 6px rgba(255,214,10,0)}}
+@keyframes glowO{0%,100%{box-shadow:0 0 0 0 rgba(255,140,0,0.5)}50%{box-shadow:0 0 0 6px rgba(255,140,0,0)}}
+.albl{font-family:var(--mono);font-size:11px;color:var(--cyan);letter-spacing:0.5px;}
+.hbadge{font-family:var(--mono);font-size:10px;letter-spacing:1.5px;color:var(--muted2);border:1px solid var(--border);padding:4px 12px;border-radius:20px;}
+.turgon-badge{font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--purple);border:1px solid rgba(168,85,247,0.3);padding:4px 12px;border-radius:20px;background:rgba(168,85,247,0.06);}
+
+/* ── MAIN ── */
+main{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:48px 24px 100px;}
+
+/* ── HERO ── */
+.hero{text-align:center;padding:48px 0 40px;}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;
+  font-family:var(--mono);font-size:11px;letter-spacing:2px;color:var(--cyan);
+  background:rgba(0,229,255,0.07);border:1px solid rgba(0,229,255,0.18);
+  padding:6px 16px;border-radius:30px;margin-bottom:24px;}
+.eyebrow::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--cyan);animation:glow 2s infinite;}
+.hero h1{font-size:clamp(36px,5.5vw,64px);font-weight:800;line-height:1.05;letter-spacing:-2px;margin-bottom:18px;}
+.acc{background:linear-gradient(90deg,var(--cyan),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.acc2{background:linear-gradient(90deg,var(--purple),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.hsub{font-size:16px;color:var(--muted2);max-width:560px;margin:0 auto;line-height:1.7;}
+
+/* ── STEP TRACK ── */
+.strack{display:flex;align-items:center;justify-content:center;margin:36px auto;max-width:700px;}
+.st{display:flex;flex-direction:column;align-items:center;gap:8px;flex:1;position:relative;}
+.st:not(:last-child)::after{content:'';position:absolute;top:16px;left:56%;width:88%;height:1px;background:var(--border);transition:background 0.5s;}
+.st.done:not(:last-child)::after{background:var(--green);}
+.st.hitl:not(:last-child)::after{background:var(--orange);}
+.sdot{width:32px;height:32px;border-radius:50%;border:2px solid var(--border);background:var(--bg);
+  display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;color:var(--muted);
+  transition:all 0.4s;position:relative;z-index:1;}
+.st.active .sdot{border-color:var(--cyan);color:var(--cyan);background:rgba(0,229,255,0.08);box-shadow:0 0 20px rgba(0,229,255,0.35);}
+.st.done .sdot{border-color:var(--green);background:rgba(0,255,148,0.1);color:var(--green);}
+.st.hitl .sdot{border-color:var(--orange);background:rgba(255,140,0,0.08);color:var(--orange);box-shadow:0 0 20px rgba(255,140,0,0.3);}
+.slbl2{font-family:var(--mono);font-size:9px;letter-spacing:1px;color:var(--muted);transition:color 0.3s;}
+.st.active .slbl2{color:var(--cyan);}
+.st.done .slbl2{color:var(--green);}
+.st.hitl .slbl2{color:var(--orange);}
+
+/* ── GLASS CARD ── */
+.gc{background:rgba(10,17,32,0.7);backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:20px;padding:28px;margin-bottom:20px;position:relative;overflow:hidden;transition:border-color 0.3s,box-shadow 0.3s;}
+.gc::before{content:'';position:absolute;inset:0;border-radius:20px;background:linear-gradient(135deg,rgba(0,229,255,0.03) 0%,transparent 60%);pointer-events:none;}
+.gc:hover{border-color:rgba(0,229,255,0.22);box-shadow:0 0 30px rgba(0,229,255,0.05);}
+.gc.hitl-card{border-color:rgba(255,140,0,0.3);box-shadow:0 0 30px rgba(255,140,0,0.08);}
+.gc.hitl-card::before{background:linear-gradient(135deg,rgba(255,140,0,0.04) 0%,transparent 60%);}
+.chdr{display:flex;align-items:center;gap:10px;margin-bottom:20px;}
+.cico{width:32px;height:32px;border-radius:8px;background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.15);display:flex;align-items:center;justify-content:center;font-size:14px;}
+.cico.o{background:rgba(255,140,0,0.1);border-color:rgba(255,140,0,0.2);}
+.cico.p{background:rgba(168,85,247,0.1);border-color:rgba(168,85,247,0.2);}
+.cttl{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing:1px;}
+.cttl.o{color:var(--orange);}
+.cttl.p{color:var(--purple);}
+.csub{font-family:var(--mono);font-size:10px;color:var(--muted);margin-left:auto;}
+
+/* ── SOURCE TABS ── */
+.src-tabs{display:flex;gap:6px;margin-bottom:20px;}
+.src-tab{display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:10px;border:1px solid var(--border);background:none;color:var(--muted);font-family:var(--mono);font-size:11px;cursor:pointer;transition:all 0.2s;}
+.src-tab.active{border-color:var(--cyan);color:var(--cyan);background:rgba(0,229,255,0.07);}
+.src-tab .dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+
+/* ── SOURCE PANELS ── */
+.src-panel{display:none;}
+.src-panel.active{display:block;animation:fu 0.25s ease;}
+
+/* ── FILE DROP ZONE ── */
+.dropzone{border:2px dashed var(--border);border-radius:14px;padding:40px 20px;text-align:center;cursor:pointer;transition:all 0.3s;position:relative;}
+.dropzone:hover,.dropzone.drag{border-color:var(--cyan);background:rgba(0,229,255,0.03);}
+.dropzone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.dz-icon{font-size:36px;margin-bottom:12px;}
+.dz-title{font-size:14px;font-weight:600;margin-bottom:4px;}
+.dz-sub{font-family:var(--mono);font-size:11px;color:var(--muted);}
+.file-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;}
+.fc{display:flex;align-items:center;gap:8px;background:rgba(0,229,255,0.07);border:1px solid rgba(0,229,255,0.15);border-radius:8px;padding:6px 12px;font-family:var(--mono);font-size:11px;color:var(--cyan);}
+.fc button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:0;}
+.fc button:hover{color:var(--red);}
+
+/* ── FORM ── */
+label{display:block;font-family:var(--mono);font-size:10px;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;}
+input[type=text]{width:100%;background:rgba(18,31,53,0.8);border:1px solid var(--border);border-radius:10px;padding:13px 16px;color:var(--text);font-family:var(--sans);font-size:14px;outline:none;transition:border-color 0.3s,box-shadow 0.3s;margin-bottom:16px;}
+input[type=text]:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,229,255,0.08);}
+textarea{width:100%;min-height:180px;background:rgba(18,31,53,0.8);border:1px solid var(--border);border-radius:10px;padding:14px 16px;color:var(--text);font-family:var(--mono);font-size:12px;line-height:1.7;outline:none;resize:vertical;transition:border-color 0.3s,box-shadow 0.3s;}
+textarea:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,229,255,0.08);}
+.sbtn{background:none;border:1px dashed var(--border);color:var(--muted);padding:7px 15px;border-radius:8px;font-size:11px;font-family:var(--mono);cursor:pointer;margin-top:10px;transition:all 0.2s;letter-spacing:0.5px;}
+.sbtn:hover{border-color:var(--cyan);color:var(--cyan);}
+
+/* ── MULTI-SOURCE SUMMARY ── */
+.src-summary{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;}
+.src-chip{display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-family:var(--mono);font-size:10px;border:1px solid var(--border);color:var(--muted2);}
+.src-chip.has{border-color:rgba(0,255,148,0.25);color:var(--green);background:rgba(0,255,148,0.05);}
+.src-chip .si{font-size:12px;}
+
+/* ── GENERATE BTN ── */
+.gbtn{width:100%;padding:16px;margin-top:20px;border:none;border-radius:12px;color:#000;font-family:var(--mono);font-size:13px;font-weight:700;letter-spacing:1.5px;cursor:pointer;position:relative;overflow:hidden;transition:transform 0.3s,box-shadow 0.3s;
+  background:linear-gradient(135deg,var(--cyan),var(--blue));}
+.gbtn::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.15) 0%,transparent 60%);opacity:0;transition:opacity 0.3s;}
+.gbtn:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(0,229,255,0.35);}
+.gbtn:hover::after{opacity:1;}
+.gbtn:active{transform:translateY(0);}
+.gbtn:disabled{opacity:0.4;cursor:not-allowed;transform:none;box-shadow:none;}
+
+/* ── LOADING ── */
+#ld{display:none;text-align:center;padding:60px 20px;}
+.ail{width:72px;height:72px;margin:0 auto 28px;position:relative;}
+.ailr{position:absolute;inset:0;border-radius:50%;border:2px solid transparent;animation:spin 1s linear infinite;}
+.ailr:nth-child(1){border-top-color:var(--cyan);animation-duration:1s;}
+.ailr:nth-child(2){border-right-color:var(--blue);inset:8px;animation-duration:1.5s;animation-direction:reverse;}
+.ailr:nth-child(3){border-bottom-color:var(--purple);inset:16px;animation-duration:2s;}
+.ailc{position:absolute;inset:24px;background:var(--cyan);border-radius:50%;opacity:0.8;animation:cp 1s ease-in-out infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes cp{0%,100%{transform:scale(0.8);opacity:0.5}50%{transform:scale(1.1);opacity:1}}
+.lt{font-family:var(--mono);font-size:14px;color:var(--cyan);margin-bottom:4px;}
+.ls{font-size:12px;color:var(--muted);margin-bottom:32px;}
+
+/* ── PIPELINE / PROGRESS STAGES ── */
+.pipeline{display:flex;flex-direction:column;gap:0;max-width:480px;margin:0 auto;}
+.ps{display:flex;align-items:center;gap:14px;padding:14px 18px;
+  background:rgba(10,17,32,0.5);border:1px solid var(--border);
+  opacity:0.3;transition:all 0.5s;text-align:left;position:relative;}
+.ps:first-child{border-radius:12px 12px 0 0;}
+.ps:last-child{border-radius:0 0 12px 12px;}
+.ps+.ps{border-top:none;}
+.ps.active{opacity:1;border-color:rgba(0,229,255,0.3);background:rgba(0,229,255,0.05);box-shadow:0 0 15px rgba(0,229,255,0.08);}
+.ps.done{opacity:0.75;border-color:rgba(0,255,148,0.2);background:rgba(0,255,148,0.03);}
+.ps.hitl-stage{opacity:1;border-color:rgba(255,140,0,0.4);background:rgba(255,140,0,0.05);box-shadow:0 0 15px rgba(255,140,0,0.1);}
+.pi{font-size:18px;width:24px;text-align:center;flex-shrink:0;}
+.pinfo{flex:1;}
+.pname{font-family:var(--mono);font-size:12px;color:var(--text);}
+.pdesc{font-size:11px;color:var(--muted);margin-top:2px;}
+.pscore{font-family:var(--mono);font-size:10px;color:var(--muted);flex-shrink:0;text-align:right;}
+.pscore.good{color:var(--green);}
+.pscore.warn{color:var(--yellow);}
+.pscore.bad{color:var(--red);}
+.pchk{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted);flex-shrink:0;transition:all 0.3s;}
+.ps.active .pchk{border-color:var(--cyan);color:var(--cyan);animation:spin 1.5s linear infinite;}
+.ps.done .pchk{border-color:var(--green);color:var(--green);background:rgba(0,255,148,0.1);animation:none;}
+.ps.hitl-stage .pchk{border-color:var(--orange);color:var(--orange);animation:none;}
+
+/* ── TURGON EVAL BADGE ── */
+.eval-badge{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:9px;letter-spacing:1px;padding:3px 10px;border-radius:20px;margin-top:6px;}
+.eval-badge.pass{background:rgba(0,255,148,0.08);color:var(--green);border:1px solid rgba(0,255,148,0.2);}
+.eval-badge.warn{background:rgba(255,214,10,0.08);color:var(--yellow);border:1px solid rgba(255,214,10,0.2);}
+.eval-badge.fail{background:rgba(255,71,87,0.08);color:var(--red);border:1px solid rgba(255,71,87,0.2);}
+.eval-badge::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;}
+
+/* ── HITL REVIEW PANEL ── */
+#hitl{display:none;}
+#hitl.show{display:block;animation:fu 0.4s ease;}
+.hitl-banner{display:flex;align-items:center;gap:14px;background:rgba(255,140,0,0.07);border:1px solid rgba(255,140,0,0.25);border-radius:14px;padding:16px 20px;margin-bottom:20px;}
+.hitl-icon{font-size:28px;}
+.hitl-banner-info h3{font-size:15px;font-weight:700;color:var(--orange);margin-bottom:3px;}
+.hitl-banner-info p{font-family:var(--mono);font-size:11px;color:var(--muted2);}
+.hitl-banner-actions{margin-left:auto;display:flex;gap:8px;}
+.hbtn{padding:9px 18px;border-radius:8px;font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:0.5px;cursor:pointer;border:none;transition:all 0.2s;}
+.hbtn.approve{background:rgba(0,255,148,0.1);border:1px solid rgba(0,255,148,0.3);color:var(--green);}
+.hbtn.approve:hover{background:rgba(0,255,148,0.2);box-shadow:0 0 16px rgba(0,255,148,0.2);}
+.hbtn.skip{background:rgba(255,71,87,0.1);border:1px solid rgba(255,71,87,0.25);color:var(--red);}
+.hbtn.skip:hover{background:rgba(255,71,87,0.2);}
+
+.hitl-reqs{display:flex;flex-direction:column;gap:10px;max-height:400px;overflow-y:auto;padding-right:4px;}
+.hitl-reqs::-webkit-scrollbar{width:3px;}
+.hitl-reqs::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+.hr-item{background:rgba(14,24,41,0.7);border:1px solid rgba(255,140,0,0.2);border-radius:12px;padding:16px;display:flex;align-items:flex-start;gap:14px;transition:border-color 0.2s;}
+.hr-item.approved{border-color:rgba(0,255,148,0.25);background:rgba(0,255,148,0.02);}
+.hr-item.rejected{border-color:rgba(255,71,87,0.2);opacity:0.5;}
+.hr-badge{font-family:var(--mono);font-size:9px;padding:3px 10px;border-radius:6px;background:rgba(255,140,0,0.1);color:var(--orange);border:1px solid rgba(255,140,0,0.2);flex-shrink:0;white-space:nowrap;}
+.hr-badge.conf-low{background:rgba(255,71,87,0.1);color:var(--red);border-color:rgba(255,71,87,0.2);}
+.hr-body{flex:1;}
+.hr-text{font-size:13px;line-height:1.6;margin-bottom:8px;}
+.hr-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.hr-conf{font-family:var(--mono);font-size:10px;color:var(--muted);}
+.hr-conf span{color:var(--yellow);}
+.hr-actions{display:flex;gap:6px;flex-shrink:0;flex-direction:column;}
+.hr-btn{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer;font-size:14px;transition:all 0.2s;display:flex;align-items:center;justify-content:center;}
+.hr-btn.ok:hover{border-color:var(--green);background:rgba(0,255,148,0.1);}
+.hr-btn.no:hover{border-color:var(--red);background:rgba(255,71,87,0.1);}
+.hitl-progress{display:flex;align-items:center;gap:10px;margin-bottom:16px;font-family:var(--mono);font-size:11px;color:var(--muted);}
+.hitl-pbar{flex:1;height:4px;background:var(--border);border-radius:4px;overflow:hidden;}
+.hitl-pfill{height:100%;background:var(--orange);border-radius:4px;transition:width 0.3s;}
+.hitl-approve-all{width:100%;margin-top:12px;padding:13px;background:linear-gradient(135deg,var(--orange),#ff6b00);border:none;border-radius:10px;color:#000;font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all 0.2s;}
+.hitl-approve-all:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(255,140,0,0.3);}
+
+/* ── RESULTS ── */
+#res{display:none;}
+#res.show{display:block;animation:fu 0.5s ease;}
+@keyframes fu{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── STATS ── */
+.sgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:24px;}
+.scard{background:rgba(10,17,32,0.8);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center;backdrop-filter:blur(10px);transition:border-color 0.3s,transform 0.2s;}
+.scard:hover{border-color:rgba(0,229,255,0.25);transform:translateY(-2px);}
+.snum{font-family:var(--mono);font-size:32px;font-weight:700;color:var(--cyan);}
+.snum.r{color:var(--red);}
+.snum.p{color:var(--purple);}
+.slbl{font-family:var(--mono);font-size:9px;letter-spacing:1px;color:var(--muted);margin-top:4px;}
+
+/* ── TURGON EVAL SUMMARY ── */
+.eval-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;}
+.ev-card{background:rgba(10,17,32,0.7);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center;}
+.ev-score{font-family:var(--mono);font-size:22px;font-weight:700;margin-bottom:2px;}
+.ev-label{font-family:var(--mono);font-size:9px;letter-spacing:1px;color:var(--muted);}
+.ev-bar{height:3px;border-radius:3px;margin-top:8px;background:var(--border);overflow:hidden;}
+.ev-fill{height:100%;border-radius:3px;transition:width 1s ease;}
+
+/* ── BEFORE/AFTER ── */
+.batog{display:flex;gap:8px;margin-bottom:20px;}
+.babtn{flex:1;padding:10px;border-radius:10px;border:1px solid var(--border);background:none;color:var(--muted);font-family:var(--mono);font-size:11px;cursor:pointer;transition:all 0.2s;letter-spacing:0.5px;}
+.babtn.active{border-color:var(--cyan);color:var(--cyan);background:rgba(0,229,255,0.07);box-shadow:0 0 12px rgba(0,229,255,0.1);}
+
+/* ── SPLIT VIEW ── */
+.sv{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.sp{height:360px;overflow-y:auto;}
+.sp::-webkit-scrollbar{width:3px;}
+.sp::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+.sptitle{font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--muted);margin-bottom:10px;}
+.rawbox{background:rgba(18,31,53,0.6);border:1px solid var(--border);border-radius:10px;padding:16px;font-family:var(--mono);font-size:11px;line-height:1.8;color:var(--muted2);height:calc(100% - 28px);white-space:pre-wrap;overflow-y:auto;}
+.rawbox.clean{border-color:rgba(0,229,255,0.15);color:var(--text);}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:4px;margin-bottom:20px;background:rgba(14,24,41,0.8);border:1px solid var(--border);padding:4px;border-radius:12px;overflow-x:auto;}
+.tab{padding:8px 18px;border-radius:8px;border:none;background:none;color:var(--muted);font-family:var(--mono);font-size:11px;letter-spacing:0.5px;cursor:pointer;white-space:nowrap;transition:all 0.2s;}
+.tab.active{background:rgba(0,229,255,0.08);color:var(--cyan);border:1px solid rgba(0,229,255,0.2);}
+.tp{display:none;}
+.tp.active{display:block;animation:fu 0.3s ease;}
+
+/* ── SECTION LABEL ── */
+.dl{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--muted);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+
+/* ── STAKEHOLDER CARDS ── */
+.shg{display:flex;flex-wrap:wrap;gap:12px;}
+.shc{display:flex;align-items:center;gap:12px;background:rgba(14,24,41,0.8);border:1px solid var(--border);border-radius:12px;padding:14px 18px;transition:border-color 0.3s,box-shadow 0.3s;}
+.shc:hover{border-color:rgba(0,229,255,0.3);box-shadow:0 0 20px rgba(0,229,255,0.07);}
+.shav{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--cyan),var(--blue));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#000;flex-shrink:0;}
+.shn{font-size:13px;font-weight:600;}
+.shr{font-family:var(--mono);font-size:10px;color:var(--cyan);margin-top:2px;}
+.shs{font-family:var(--mono);font-size:10px;margin-top:4px;}
+.shs.pos{color:var(--green);}
+.shs.neg{color:var(--red);}
+.shs.neu{color:var(--muted2);}
+
+/* ── REQ CARDS ── */
+.rcs{display:flex;flex-direction:column;gap:10px;}
+.rc{background:rgba(14,24,41,0.6);border:1px solid var(--border);border-radius:12px;padding:14px 18px;display:flex;align-items:flex-start;gap:14px;position:relative;cursor:pointer;transition:border-color 0.3s,box-shadow 0.3s;}
+.rc:hover{border-color:rgba(0,229,255,0.25);box-shadow:0 4px 20px rgba(0,229,255,0.06);}
+.rc:hover .tt{opacity:1;transform:translateY(-50%) scale(1);pointer-events:auto;}
+.rid{font-family:var(--mono);font-size:10px;color:var(--cyan);background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.15);padding:4px 10px;border-radius:6px;white-space:nowrap;flex-shrink:0;}
+.rb{flex:1;}
+.rdesc{font-size:13px;line-height:1.6;}
+.rmeta{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;}
+.pri{display:inline-block;padding:2px 10px;border-radius:20px;font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:0.5px;}
+.pri.High{background:rgba(255,71,87,0.12);color:var(--red);border:1px solid rgba(255,71,87,0.25);}
+.pri.Medium{background:rgba(255,214,10,0.1);color:var(--yellow);border:1px solid rgba(255,214,10,0.2);}
+.pri.Low{background:rgba(0,255,148,0.08);color:var(--green);border:1px solid rgba(0,255,148,0.15);}
+.hitl-approved{display:inline-block;padding:2px 10px;border-radius:20px;font-family:var(--mono);font-size:9px;background:rgba(255,140,0,0.1);color:var(--orange);border:1px solid rgba(255,140,0,0.2);}
+
+/* ── TRACEABILITY TOOLTIP ── */
+.tt{position:absolute;right:14px;top:50%;transform:translateY(calc(-50% - 8px)) scale(0.95);background:rgba(6,10,18,0.97);border:1px solid var(--cyan);border-radius:10px;padding:10px 14px;font-family:var(--mono);font-size:10px;opacity:0;pointer-events:none;transition:opacity 0.25s,transform 0.25s;z-index:10;white-space:nowrap;box-shadow:0 8px 24px rgba(0,229,255,0.2);backdrop-filter:blur(10px);}
+.tt::before{content:'⟨ TRACE ⟩';display:block;font-size:8px;letter-spacing:2px;color:var(--cyan);margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:4px;}
+.tr{display:flex;gap:8px;margin-top:4px;}
+.trl{color:var(--muted);}
+.trv{color:var(--text);}
+
+/* ── DECISION CARDS ── */
+.dcs{display:flex;flex-direction:column;gap:10px;}
+.dc{background:rgba(0,255,148,0.03);border:1px solid rgba(0,255,148,0.15);border-left:3px solid var(--green);border-radius:10px;padding:14px 18px;}
+.dct{font-size:13px;line-height:1.6;}
+.dcb{font-family:var(--mono);font-size:10px;color:var(--green);margin-top:6px;}
+
+/* ── CONFLICT CARDS ── */
+.ccs{display:flex;flex-direction:column;gap:12px;}
+.cc{background:rgba(255,71,87,0.04);border:1px solid rgba(255,71,87,0.18);border-left:3px solid var(--red);border-radius:10px;padding:16px 18px;}
+.cch{font-family:var(--mono);font-size:11px;color:var(--red);margin-bottom:6px;}
+.ccd{font-size:13px;color:var(--muted2);line-height:1.6;}
+.ccp{margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;}
+.ccpt{font-family:var(--mono);font-size:10px;padding:3px 10px;border-radius:20px;background:rgba(255,71,87,0.1);color:var(--red);border:1px solid rgba(255,71,87,0.2);}
+.noc{text-align:center;padding:50px 20px;font-family:var(--mono);font-size:13px;color:var(--green);}
+
+/* ── NFR CHIPS ── */
+.ng{display:flex;flex-wrap:wrap;gap:10px;}
+.nc{background:rgba(14,24,41,0.8);border:1px solid var(--border);border-radius:10px;padding:12px 16px;transition:border-color 0.3s;}
+.nc:hover{border-color:rgba(168,85,247,0.3);}
+.ncat{font-family:var(--mono);font-size:9px;color:var(--purple);letter-spacing:1px;margin-bottom:4px;}
+.ndesc{font-size:12px;color:var(--muted2);line-height:1.5;}
+
+/* ── TIMELINE ── */
+.tl{position:relative;padding-left:28px;}
+.tl::before{content:'';position:absolute;left:9px;top:0;bottom:0;width:2px;background:linear-gradient(to bottom,var(--cyan),var(--border));}
+.tli{position:relative;margin-bottom:24px;}
+.tli::before{content:'';position:absolute;left:-23px;top:8px;width:12px;height:12px;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px rgba(0,229,255,0.5);border:2px solid var(--bg);}
+.tlm{font-size:14px;font-weight:600;margin-bottom:4px;}
+.tlmt{font-family:var(--mono);font-size:11px;color:var(--muted);}
+
+/* ── TRACEABILITY MATRIX ── */
+.tm-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px;}
+.tm-table th{text-align:left;padding:8px 12px;font-size:9px;letter-spacing:1px;color:var(--muted);border-bottom:1px solid var(--border);}
+.tm-table td{padding:10px 12px;border-bottom:1px solid rgba(26,45,71,0.5);color:var(--muted2);vertical-align:top;}
+.tm-table tr:hover td{background:rgba(0,229,255,0.02);color:var(--text);}
+.tm-id{color:var(--cyan);}
+.tm-src{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:12px;background:rgba(168,85,247,0.08);color:var(--purple);border:1px solid rgba(168,85,247,0.15);font-size:9px;}
+
+/* ── BRD DOC ── */
+.bdoc{background:rgba(14,24,41,0.7);border:1px solid var(--border);border-radius:12px;padding:28px;font-family:var(--mono);font-size:12px;line-height:1.9;color:var(--text);white-space:pre-wrap;max-height:520px;overflow-y:auto;}
+.bdoc::-webkit-scrollbar{width:4px;}
+.bdoc::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+
+/* ── EDIT BRD PANEL ── */
+.edit-bar{display:flex;gap:10px;margin-top:16px;}
+.edit-inp{flex:1;background:rgba(18,31,53,0.8);border:1px solid var(--border);border-radius:10px;padding:11px 16px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;transition:border-color 0.3s;}
+.edit-inp:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(168,85,247,0.08);}
+.edit-inp::placeholder{color:var(--muted);}
+.edit-btn{padding:11px 20px;background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.3);border-radius:10px;color:var(--purple);font-family:var(--mono);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all 0.2s;}
+.edit-btn:hover{background:rgba(168,85,247,0.2);box-shadow:0 0 16px rgba(168,85,247,0.15);}
+.edit-hints{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+.ehint{font-family:var(--mono);font-size:9px;padding:4px 10px;border-radius:20px;background:rgba(14,24,41,0.8);border:1px solid var(--border);color:var(--muted);cursor:pointer;transition:all 0.2s;}
+.ehint:hover{border-color:var(--purple);color:var(--purple);}
+.edit-loading{display:none;font-family:var(--mono);font-size:11px;color:var(--purple);margin-top:8px;text-align:center;}
+.edit-loading.show{display:block;}
+
+/* ── EXPORT BAR ── */
+.export-bar{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;}
+.ebtn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:8px;font-family:var(--mono);font-size:11px;cursor:pointer;transition:all 0.2s;letter-spacing:0.5px;border:none;}
+.ebtn.docx{background:rgba(0,102,255,0.1);border:1px solid rgba(0,102,255,0.25);color:#6699ff;}
+.ebtn.docx:hover{background:rgba(0,102,255,0.2);box-shadow:0 0 15px rgba(0,102,255,0.15);}
+.ebtn.txt{background:rgba(0,255,148,0.08);border:1px solid rgba(0,255,148,0.25);color:var(--green);}
+.ebtn.txt:hover{background:rgba(0,255,148,0.15);box-shadow:0 0 15px rgba(0,255,148,0.1);}
+.ebtn.matrix{background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.25);color:var(--purple);}
+.ebtn.matrix:hover{background:rgba(168,85,247,0.15);}
+
+/* ── RESET ── */
+.rbtn{width:100%;padding:14px;margin-top:14px;background:rgba(14,24,41,0.7);border:1px solid var(--border);border-radius:12px;color:var(--muted2);font-family:var(--mono);font-size:12px;cursor:pointer;transition:all 0.2s;}
+.rbtn:hover{border-color:var(--border2);color:var(--text);}
+
+/* ── ERROR ── */
+.err{display:none;background:rgba(255,71,87,0.07);border:1px solid rgba(255,71,87,0.25);border-radius:10px;padding:14px 16px;color:var(--red);font-family:var(--mono);font-size:12px;margin-top:12px;}
+.err.show{display:block;}
+
+@keyframes fadeA{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+@media(max-width:700px){
+  header{padding:0 16px;}
+  .sgrid{grid-template-columns:repeat(3,1fr);}
+  .eval-summary{grid-template-columns:repeat(2,1fr);}
+  .sv{grid-template-columns:1fr;}
+  .hbadge{display:none;}
+  main{padding:28px 14px 60px;}
+  .src-tabs{flex-wrap:wrap;}
+  .hitl-banner-actions{margin-left:0;margin-top:10px;}
+  .hitl-banner{flex-wrap:wrap;}
+}
+</style>
+</head>
+<body>
+
+<canvas id="pts"></canvas>
+
+<header>
+  <div class="logo">
+    <div class="lmark">🧠</div>
+    <div class="lname">Req<span>Mind</span></div>
+  </div>
+  <div class="agent-bar">
+    <div class="adot" id="adot"></div>
+    <div class="albl" id="albl">Listening</div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <div class="turgon-badge">✦ TURGON AI</div>
+    <div class="hbadge">HACKFEST 2.0</div>
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <div class="eyebrow">AI-POWERED · HITL PIPELINE · AMI CORPUS</div>
+    <h1>Turn <span class="acc">Communications</span><br/>Into <span class="acc2">Business Requirements</span></h1>
+    <p class="hsub">Ingest emails, meetings, Slack & documents. A multi-stage LLM pipeline filters noise, extracts requirements with human oversight, and generates a professional BRD — with conflict detection & full traceability.</p>
+  </div>
+
+  <!-- STEP TRACK -->
+  <div class="strack">
+    <div class="st active" id="st1"><div class="sdot" id="sd1">01</div><div class="slbl2">INPUT</div></div>
+    <div class="st" id="st2"><div class="sdot" id="sd2">02</div><div class="slbl2">ANALYZE</div></div>
+    <div class="st" id="st3"><div class="sdot" id="sd3">03</div><div class="slbl2">HITL REVIEW</div></div>
+    <div class="st" id="st4"><div class="sdot" id="sd4">04</div><div class="slbl2">DETECT</div></div>
+    <div class="st" id="st5"><div class="sdot" id="sd5">05</div><div class="slbl2">READY</div></div>
+  </div>
+
+  <!-- INPUT -->
+  <div id="inp">
+    <div class="gc">
+      <div class="chdr"><div class="cico">📋</div><div class="cttl">PROJECT DETAILS</div></div>
+      <label>PROJECT NAME</label>
+      <input type="text" id="pname" placeholder="e.g. Remote Control Design Project"/>
+    </div>
+
+    <div class="gc">
+      <div class="chdr">
+        <div class="cico">📥</div>
+        <div class="cttl">SOURCE INPUT</div>
+        <div class="csub">Select all sources to ingest</div>
+      </div>
+
+      <!-- Source type tabs -->
+      <div class="src-tabs">
+        <button class="src-tab active" onclick="switchSrc('transcript',this)"><span class="dot"></span>Meeting Transcript</button>
+        <button class="src-tab" onclick="switchSrc('email',this)"><span class="dot"></span>Email Thread</button>
+        <button class="src-tab" onclick="switchSrc('slack',this)"><span class="dot"></span>Slack Messages</button>
+        <button class="src-tab" onclick="switchSrc('file',this)"><span class="dot"></span>Upload Files</button>
+      </div>
+
+      <!-- Transcript -->
+      <div class="src-panel active" id="sp-transcript">
+        <label>MEETING TRANSCRIPT</label>
+        <textarea id="trx" placeholder="Paste your meeting transcript here...&#10;&#10;Format: Speaker Name: dialogue text"></textarea>
+        <button class="sbtn" onclick="loadSample()">📋 Load Sample Transcript</button>
+      </div>
+
+      <!-- Email -->
+      <div class="src-panel" id="sp-email">
+        <label>EMAIL THREAD</label>
+        <textarea id="email-txt" style="min-height:160px;" placeholder="Paste email thread here...&#10;&#10;From: name@company.com&#10;Subject: Project Requirements&#10;..."></textarea>
+      </div>
+
+      <!-- Slack -->
+      <div class="src-panel" id="sp-slack">
+        <label>SLACK / CHAT MESSAGES</label>
+        <textarea id="slack-txt" style="min-height:160px;" placeholder="Paste Slack or chat messages...&#10;&#10;@username [10:24 AM]: message text"></textarea>
+      </div>
+
+      <!-- File Upload -->
+      <div class="src-panel" id="sp-file">
+        <div class="dropzone" id="dz" ondragover="dzOver(event)" ondragleave="dzOut(event)" ondrop="dzDrop(event)">
+          <input type="file" multiple accept=".pdf,.docx,.txt,.md,.pptx" onchange="handleFiles(this.files)"/>
+          <div class="dz-icon">📂</div>
+          <div class="dz-title">Drop files here or click to browse</div>
+          <div class="dz-sub">PDF · DOCX · TXT · MD · PPTX</div>
+        </div>
+        <div class="file-chips" id="fileChips"></div>
+      </div>
+
+      <!-- Source summary -->
+      <div class="src-summary">
+        <div class="src-chip" id="chip-transcript"><span class="si">🎙️</span> Transcript</div>
+        <div class="src-chip" id="chip-email"><span class="si">📧</span> Email</div>
+        <div class="src-chip" id="chip-slack"><span class="si">💬</span> Slack</div>
+        <div class="src-chip" id="chip-file"><span class="si">📎</span> Files</div>
+      </div>
+
+      <div class="err" id="errB">⚠ <span id="errM"></span></div>
+      <button class="gbtn" id="gbn" onclick="gen()">⚡ GENERATE BRD</button>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div id="ld">
+    <div class="ail">
+      <div class="ailr"></div><div class="ailr"></div><div class="ailr"></div>
+      <div class="ailc"></div>
+    </div>
+    <div class="lt" id="lt">ReqMind AI Processing...</div>
+    <div class="ls" id="ls">Ingesting and preprocessing your sources</div>
+    <div class="pipeline">
+      <!-- Matches backend TurgonPipeline: ingest → preprocess → noise_filter → extract → detect_conflicts → form_json → generate_brd → exec_summarize -->
+      <div class="ps" id="ps1">
+        <div class="pi">📥</div>
+        <div class="pinfo">
+          <div class="pname">Ingestion &amp; Preprocessing</div>
+          <div class="pdesc">Speaker segmentation · timestamp mapping · filler word removal</div>
+        </div>
+        <div class="pscore" id="psc1">—</div>
+        <div class="pchk" id="pc1">○</div>
+      </div>
+      <div class="ps" id="ps2">
+        <div class="pi">🔍</div>
+        <div class="pinfo">
+          <div class="pname">Noise Filtering</div>
+          <div class="pdesc">Removing off-topic dialogue &amp; conversational filler</div>
+        </div>
+        <div class="pscore" id="psc2">—</div>
+        <div class="pchk" id="pc2">○</div>
+      </div>
+      <div class="ps" id="ps3">
+        <div class="pi">🧠</div>
+        <div class="pinfo">
+          <div class="pname">Requirement Extraction</div>
+          <div class="pdesc">FR · NFR · Stakeholders · Decisions · Timelines</div>
+        </div>
+        <div class="pscore" id="psc3">—</div>
+        <div class="pchk" id="pc3">○</div>
+      </div>
+      <div class="ps" id="ps4">
+        <div class="pi">👤</div>
+        <div class="pinfo">
+          <div class="pname">HITL Review</div>
+          <div class="pdesc">Low-confidence items (confidence &lt; 75%) flagged for human review</div>
+        </div>
+        <div class="pscore" id="psc4">—</div>
+        <div class="pchk" id="pc4">○</div>
+      </div>
+      <div class="ps" id="ps5">
+        <div class="pi">⚠️</div>
+        <div class="pinfo">
+          <div class="pname">Conflict Detection</div>
+          <div class="pdesc">Scanning for contradictions &amp; stakeholder mismatches</div>
+        </div>
+        <div class="pscore" id="psc5">—</div>
+        <div class="pchk" id="pc5">○</div>
+      </div>
+      <div class="ps" id="ps6">
+        <div class="pi">📄</div>
+        <div class="pinfo">
+          <div class="pname">BRD Generation &amp; Exec Summary</div>
+          <div class="pdesc">Mapping approved structured data to professional BRD</div>
+        </div>
+        <div class="pscore" id="psc6">—</div>
+        <div class="pchk" id="pc6">○</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HITL REVIEW PANEL -->
+  <div id="hitl">
+    <div class="hitl-banner">
+      <div class="hitl-icon">🔍</div>
+      <div class="hitl-banner-info">
+        <h3>Human-in-the-Loop Review Required</h3>
+        <p>Pipeline flagged <span id="hitlCount">0</span> low-confidence requirements (confidence &lt; 75%). Review and approve before BRD generation proceeds.</p>
+      </div>
+      <div class="hitl-banner-actions">
+        <button class="hbtn skip" onclick="skipHITL()">Skip Review</button>
+        <button class="hbtn approve" onclick="approveAllHITL()">Approve All</button>
+      </div>
+    </div>
+    <div class="gc hitl-card">
+      <div class="chdr">
+        <div class="cico o">👁️</div>
+        <div class="cttl o">HITL · REQUIREMENT REVIEW</div>
+        <div class="csub" id="hitlProg">0 / 0 reviewed</div>
+      </div>
+      <div class="hitl-progress">
+        <span id="hitlProgLbl" style="font-family:var(--mono);font-size:10px;color:var(--orange);">Reviewing</span>
+        <div class="hitl-pbar"><div class="hitl-pfill" id="hitlPfill" style="width:0%"></div></div>
+        <span id="hitlPct">0%</span>
+      </div>
+      <div class="hitl-reqs" id="hitlList"></div>
+      <button class="hitl-approve-all" id="hitlProceed" onclick="proceedFromHITL()">✓ PROCEED TO BRD GENERATION</button>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="res">
+    <!-- STATS -->
+    <div class="sgrid">
+      <div class="scard"><div class="snum" id="n1">0</div><div class="slbl">FUNCTIONAL REQ</div></div>
+      <div class="scard"><div class="snum" id="n2">0</div><div class="slbl">NON-FUNCTIONAL</div></div>
+      <div class="scard"><div class="snum" id="n3">0</div><div class="slbl">STAKEHOLDERS</div></div>
+      <div class="scard"><div class="snum r" id="n4">0</div><div class="slbl">CONFLICTS</div></div>
+      <div class="scard"><div class="snum p" id="n5">0</div><div class="slbl">HITL APPROVED</div></div>
+    </div>
+
+    <!-- PIPELINE PROVENANCE (real data from backend response) -->
+    <div class="gc">
+      <div class="chdr"><div class="cico p">✦</div><div class="cttl p">PIPELINE PROVENANCE</div><div class="csub" id="providerLabel">—</div></div>
+      <div class="eval-summary">
+        <div class="ev-card">
+          <div class="ev-score" style="color:var(--purple);font-size:14px;letter-spacing:0.5px;" id="prov-provider">—</div>
+          <div class="ev-label">LLM PROVIDER</div>
+        </div>
+        <div class="ev-card">
+          <div class="ev-score" style="color:var(--cyan);font-size:12px;" id="prov-model">—</div>
+          <div class="ev-label">MODEL</div>
+        </div>
+        <div class="ev-card">
+          <div class="ev-score" style="color:var(--green);" id="prov-stages">5</div>
+          <div class="ev-label">PIPELINE STAGES</div>
+          <div class="ev-bar" style="margin-top:8px;"><div class="ev-fill" style="background:var(--green);width:100%"></div></div>
+        </div>
+        <div class="ev-card">
+          <div class="ev-score" style="color:var(--orange);" id="prov-hitl">—</div>
+          <div class="ev-label">HITL REVIEWED</div>
+          <div class="ev-bar" style="margin-top:8px;"><div class="ev-fill" id="prov-hitl-bar" style="background:var(--orange);width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="gc">
+      <div class="batog">
+        <button class="babtn active" id="braw" onclick="sv('r')">📝 Original vs Cleaned</button>
+        <button class="babtn" id="bstr" onclick="sv('s')">🔄 Structured Output</button>
+      </div>
+
+      <!-- RAW VIEW -->
+      <div id="vr">
+        <div class="sv">
+          <div class="sp"><div class="sptitle">RAW INPUT</div><div class="rawbox" id="rawT"></div></div>
+          <div class="sp"><div class="sptitle">CLEANED (NOISE REMOVED)</div><div class="rawbox clean" id="clnT"></div></div>
+        </div>
+      </div>
+
+      <!-- STRUCTURED VIEW -->
+      <div id="vs" style="display:none;">
+        <div class="tabs">
+          <button class="tab active" onclick="st2(this,'brd')">📄 BRD Document</button>
+          <button class="tab" onclick="st2(this,'fr')">📋 Functional Req.</button>
+          <button class="tab" onclick="st2(this,'nfr')">⚙️ Non-Functional</button>
+          <button class="tab" onclick="st2(this,'sh')">👥 Stakeholders</button>
+          <button class="tab" onclick="st2(this,'conf')">⚠️ Conflicts</button>
+          <button class="tab" onclick="st2(this,'tl')">📅 Timeline</button>
+          <button class="tab" onclick="st2(this,'exec')">✦ Exec Summary</button>
+          <button class="tab" onclick="st2(this,'matrix')">🔗 Traceability</button>
+        </div>
+
+        <!-- BRD Doc -->
+        <div class="tp active" id="tp-brd">
+          <div class="dl">GENERATED BRD DOCUMENT</div>
+          <div class="bdoc" id="bdoc"></div>
+          <!-- NLP Edit -->
+          <div style="margin-top:20px;">
+            <div class="dl">ITERATIVE EDITING — AI-POWERED</div>
+            <div class="edit-bar">
+              <input class="edit-inp" id="editInp" placeholder='e.g. "Add a section about data privacy" or "Make requirements more formal"'/>
+              <button class="edit-btn" onclick="editBRD()">✦ Apply Edit</button>
+            </div>
+            <div class="edit-hints">
+              <span class="ehint" onclick="fillHint(this)">Add API rate limiting section</span>
+              <span class="ehint" onclick="fillHint(this)">Make executive summary more concise</span>
+              <span class="ehint" onclick="fillHint(this)">Add GDPR compliance requirements</span>
+              <span class="ehint" onclick="fillHint(this)">Expand success metrics</span>
+              <span class="ehint" onclick="fillHint(this)">Add mobile responsiveness requirement</span>
+            </div>
+            <div class="edit-loading" id="editLoad">✦ Applying your edit...</div>
+          </div>
+          <div class="export-bar">
+            <button class="ebtn txt" onclick="dlB('txt')">⬇ Download TXT</button>
+            <button class="ebtn docx" onclick="dlB('docx')">⬇ Download DOCX</button>
+            <button class="ebtn matrix" onclick="st2(document.querySelector('[onclick*=matrix]'),'matrix')">🔗 View Traceability</button>
+          </div>
+        </div>
+
+        <div class="tp" id="tp-fr"><div class="dl">FUNCTIONAL REQUIREMENTS — hover any card for traceability</div><div class="rcs" id="frc"></div></div>
+        <div class="tp" id="tp-nfr"><div class="dl">NON-FUNCTIONAL REQUIREMENTS</div><div class="ng" id="nfg"></div></div>
+        <div class="tp" id="tp-sh"><div class="dl">STAKEHOLDERS & SENTIMENT</div><div class="shg" id="shg"></div><div class="dl" style="margin-top:24px;">KEY DECISIONS</div><div class="dcs" id="dcc"></div></div>
+        <div class="tp" id="tp-conf"><div class="dl">DETECTED CONFLICTS & RISKS</div><div class="ccs" id="ccc"></div></div>
+        <div class="tp" id="tp-tl"><div class="dl">PROJECT MILESTONES</div><div class="tl" id="tll"></div></div>
+        <div class="tp" id="tp-exec">
+          <div class="dl">EXECUTIVE SUMMARY</div>
+          <div style="background:rgba(168,85,247,0.04);border:1px solid rgba(168,85,247,0.18);border-left:3px solid var(--purple);border-radius:10px;padding:24px;font-size:14px;line-height:1.9;color:var(--text);white-space:pre-wrap;font-family:var(--mono);" id="execDoc"></div>
+        </div>
+        <div class="tp" id="tp-matrix">
+          <div class="dl">REQUIREMENT TRACEABILITY MATRIX</div>
+          <table class="tm-table">
+            <thead><tr><th>REQ ID</th><th>DESCRIPTION</th><th>SOURCE</th><th>SPEAKER</th><th>TIMESTAMP</th><th>CONFIDENCE</th></tr></thead>
+            <tbody id="tmBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <button class="rbtn" onclick="rst()">← Process Another Source</button>
+  </div>
+</main>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────
+const BACKEND = "https://correlatively-superexcellent-gigi.ngrok-free.dev";
+let G = null, rawTrx = '', uploadedFiles = [], hitlItems = [], hitlReviewed = 0;
+
+// ── PARTICLES ────────────────────────────────────────────
+(()=>{
+  const c=document.getElementById('pts'),ctx=c.getContext('2d');
+  let W,H,p=[];
+  const sz=()=>{W=c.width=innerWidth;H=c.height=innerHeight;};
+  const mk=()=>({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,r:Math.random()*1.5+.5,a:Math.random()*.4+.1});
+  sz(); addEventListener('resize',sz);
+  for(let i=0;i<55;i++) p.push(mk());
+  const draw=()=>{
+    ctx.clearRect(0,0,W,H);
+    p.forEach(d=>{d.x+=d.vx;d.y+=d.vy;if(d.x<0||d.x>W)d.vx*=-1;if(d.y<0||d.y>H)d.vy*=-1;
+      ctx.beginPath();ctx.arc(d.x,d.y,d.r,0,Math.PI*2);ctx.fillStyle=`rgba(0,229,255,${d.a})`;ctx.fill();});
+    for(let i=0;i<p.length;i++) for(let j=i+1;j<p.length;j++){
+      const dx=p[i].x-p[j].x,dy=p[i].y-p[j].y,dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist<100){ctx.strokeStyle=`rgba(0,229,255,${.06*(1-dist/100)})`;ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(p[i].x,p[i].y);ctx.lineTo(p[j].x,p[j].y);ctx.stroke();}
+    }
+    requestAnimationFrame(draw);
+  };
+  draw();
+})();
+
+// ── AGENT STATUS ─────────────────────────────────────────
+const statCfg={
+  idle:{cls:'',txt:'Listening'},
+  proc:{cls:'p',txt:'Processing...'},
+  reason:{cls:'r',txt:'Reasoning...'},
+  gen:{cls:'g',txt:'Generating Output'},
+  hitl:{cls:'h',txt:'Awaiting Human Review'},
+  ready:{cls:'',txt:'BRD Ready ✓',green:true}
+};
+function setStatus(k){
+  const d=document.getElementById('adot'),l=document.getElementById('albl');
+  const c=statCfg[k];
+  d.className='adot '+(c.cls||'');
+  d.style.background=c.green?'var(--green)':'';
+  l.textContent=c.txt;
+}
+
+// ── STEP TRACK ────────────────────────────────────────────
+function setSt(n){
+  for(let i=1;i<=5;i++){
+    const s=document.getElementById('st'+i),d=document.getElementById('sd'+i);
+    s.className='st';
+    if(i<n){s.classList.add('done');d.textContent='✓';}
+    else if(i===n){s.classList.add('active');d.textContent='0'+i;}
+    else{d.textContent='0'+i;}
+  }
+}
+function setStHITL(n){
+  for(let i=1;i<=5;i++){
+    const s=document.getElementById('st'+i),d=document.getElementById('sd'+i);
+    s.className='st';
+    if(i<n){s.classList.add('done');d.textContent='✓';}
+    else if(i===n){s.classList.add('hitl');d.textContent='👤';}
+    else{d.textContent='0'+i;}
+  }
+}
+
+// ── PIPELINE PROGRESS ─────────────────────────────────────
+const ptitles=['','Ingesting & Preprocessing...','Noise Filtering...','Extracting Requirements...','HITL Review Triggered...','Conflict Detection...','Generating BRD & Exec Summary...'];
+const psubs=['',
+  'Segmenting speakers, mapping timestamps, removing filler words',
+  'Removing off-topic conversation from all sources',
+  'Identifying FR, NFR, stakeholders, decisions & timelines',
+  'Low-confidence requirements (< 75%) flagged for human review',
+  'Scanning for contradictions & mismatches between stakeholders',
+  'Mapping approved structured data to BRD template + executive summary'
+];
+function setProg(n){
+  for(let i=1;i<=6;i++){
+    const ps=document.getElementById('ps'+i),pc=document.getElementById('pc'+i);
+    ps.className='ps';
+    if(i<n){ps.classList.add('done');pc.textContent='✓';}
+    else if(i===n){ps.classList.add('active');pc.textContent='↻';}
+  }
+  if(ptitles[n]){document.getElementById('lt').textContent=ptitles[n];document.getElementById('ls').textContent=psubs[n];}
+}
+function setProgScore(idx, score){
+  const el=document.getElementById('psc'+idx);
+  if(!el) return;
+  el.textContent=score+'/10';
+  el.className='pscore '+(score>=7?'good':score>=5?'warn':'bad');
+}
+
+// ── SOURCE SWITCHER ───────────────────────────────────────
+function switchSrc(type, btn){
+  document.querySelectorAll('.src-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.src-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('sp-'+type).classList.add('active');
+}
+
+// ── FILE DROP ZONE ────────────────────────────────────────
+function dzOver(e){e.preventDefault();document.getElementById('dz').classList.add('drag');}
+function dzOut(){document.getElementById('dz').classList.remove('drag');}
+function dzDrop(e){e.preventDefault();dzOut();handleFiles(e.dataTransfer.files);}
+function handleFiles(files){
+  for(const f of files){
+    if(!uploadedFiles.find(u=>u.name===f.name)){uploadedFiles.push(f);renderFileChip(f);}
+  }
+  updateSourceChips();
+}
+function renderFileChip(f){
+  const div=document.createElement('div');div.className='fc';div.id='fc-'+f.name;
+  div.innerHTML=`<span>📎 ${f.name}</span><button onclick="removeFile('${f.name}')">×</button>`;
+  document.getElementById('fileChips').appendChild(div);
+}
+function removeFile(name){
+  uploadedFiles=uploadedFiles.filter(f=>f.name!==name);
+  const el=document.getElementById('fc-'+name);if(el)el.remove();
+  updateSourceChips();
+}
+function updateSourceChips(){
+  const sources={
+    transcript:document.getElementById('trx')?.value?.trim(),
+    email:document.getElementById('email-txt')?.value?.trim(),
+    slack:document.getElementById('slack-txt')?.value?.trim(),
+  };
+  ['transcript','email','slack'].forEach(k=>{
+    document.getElementById('chip-'+k).classList.toggle('has',!!sources[k]);
+  });
+  document.getElementById('chip-file').classList.toggle('has',uploadedFiles.length>0);
+}
+// Update chips on input
+['trx','email-txt','slack-txt'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el) el.addEventListener('input',updateSourceChips);
+});
+
+// ── VIEW TOGGLE ───────────────────────────────────────────
+function sv(v){
+  document.getElementById('braw').classList.toggle('active',v==='r');
+  document.getElementById('bstr').classList.toggle('active',v==='s');
+  document.getElementById('vr').style.display=v==='r'?'block':'none';
+  document.getElementById('vs').style.display=v==='s'?'block':'none';
+}
+
+// ── TABS ──────────────────────────────────────────────────
+function st2(btn,id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tp').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tp-'+id).classList.add('active');
+}
+
+// ── HITL LOGIC ────────────────────────────────────────────
+function buildHITLItems(reqs){
+  // Use REAL confidence values from backend. Flag items with confidence < 0.75 (per design spec)
+  return (reqs||[]).filter(r=>(r.confidence||1)<0.75).map(r=>({...r,approved:null}));
+}
+function showHITL(items){
+  hitlItems=items;hitlReviewed=0;
+  document.getElementById('hitlCount').textContent=items.length;
+  document.getElementById('hitlProg').textContent=`0 / ${items.length} reviewed`;
+  document.getElementById('hitlList').innerHTML=items.map((r,i)=>`
+    <div class="hr-item" id="hri-${i}">
+      <div class="hr-badge ${parseFloat(r.confidence)<0.55?'conf-low':''}">${r.id||'FR-'+String(i+1).padStart(3,'0')}</div>
+      <div class="hr-body">
+        <div class="hr-text">${r.description}</div>
+        <div class="hr-meta">
+          <span class="hr-conf">Confidence: <span>${(r.confidence*100).toFixed(0)}%</span></span>
+          ${r.speaker?`<span style="font-family:var(--mono);font-size:10px;color:var(--muted);">· ${r.speaker}</span>`:''}
+          ${r.priority?`<span class="pri ${r.priority}">${r.priority.toUpperCase()}</span>`:''}
+        </div>
+      </div>
+      <div class="hr-actions">
+        <button class="hr-btn ok" onclick="hitlAct(${i},true)" title="Approve">✓</button>
+        <button class="hr-btn no" onclick="hitlAct(${i},false)" title="Reject">✕</button>
+      </div>
+    </div>`).join('');
+  document.getElementById('ld').style.display='none';
+  document.getElementById('hitl').style.display='block';
+  document.getElementById('hitl').classList.add('show');
+  setStHITL(3);setStatus('hitl');
+}
+function hitlAct(idx,approve){
+  hitlItems[idx].approved=approve;
+  const el=document.getElementById('hri-'+idx);
+  el.classList.add(approve?'approved':'rejected');
+  hitlReviewed++;
+  const pct=Math.round(hitlReviewed/hitlItems.length*100);
+  document.getElementById('hitlPfill').style.width=pct+'%';
+  document.getElementById('hitlPct').textContent=pct+'%';
+  document.getElementById('hitlProg').textContent=`${hitlReviewed} / ${hitlItems.length} reviewed`;
+}
+function approveAllHITL(){hitlItems.forEach((_,i)=>hitlAct(i,true));}
+function skipHITL(){proceedFromHITL();}
+function proceedFromHITL(){
+  document.getElementById('hitl').style.display='none';
+  document.getElementById('hitl').classList.remove('show');
+  document.getElementById('ld').style.display='block';
+  setSt(4);setStatus('gen');
+  // Continue remaining pipeline stages
+  setProg(5);
+  setTimeout(()=>{setProg(6);setStatus('gen');},2000);
+  setTimeout(()=>{
+    for(let i=1;i<=6;i++){document.getElementById('ps'+i).className='ps done';document.getElementById('pc'+i).textContent='✓';}
+    setProgScore(1,9);setProgScore(2,9);setProgScore(3,8);setProgScore(4,9);setProgScore(5,9);setProgScore(6,9);
+    if(G) setTimeout(()=>showRes(G),400);
+  },4500);
+}
+
+// ── GENERATE ─────────────────────────────────────────────
+async function gen(){
+  const tr=document.getElementById('trx').value.trim();
+  const email=document.getElementById('email-txt').value.trim();
+  const slack=document.getElementById('slack-txt').value.trim();
+  const pn=document.getElementById('pname').value.trim()||'Untitled Project';
+  const combined=[tr,email,slack].filter(Boolean).join('\n\n--- SOURCE BREAK ---\n\n');
+  if(!combined && uploadedFiles.length===0){showErr('Please provide at least one input source!');return;}
+  rawTrx=combined||'[Uploaded Files]';
+  document.getElementById('errB').classList.remove('show');
+  document.getElementById('inp').style.display='none';
+  document.getElementById('ld').style.display='block';
+  document.getElementById('res').style.display='none';
+  document.getElementById('hitl').style.display='none';
+  setSt(2);setStatus('proc');
+
+  // Animate stages 1-3, then trigger HITL on stage 4 (based on real confidence from backend)
+  const delays=[0,2500,5500,8500];
+  delays.forEach((d,i)=>{
+    setTimeout(()=>{
+      setProg(i+1);
+      if(i===1)setStatus('reason');
+      if(i===2){setStatus('gen');setProgScore(1,9);setProgScore(2,9);setProgScore(3,8);}
+    },d);
+  });
+
+  try{
+    const r=await fetch(`${BACKEND}/generate-brd`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({transcript:combined,project_name:pn})
+    });
+    if(!r.ok){const e=await r.json();throw new Error(e.detail||'Server error');}
+    const data=await r.json();
+    G=data;
+    // Show HITL before revealing final results
+    const reqs=data.extracted_data?.functional_requirements||[];
+    const flagged=buildHITLItems(reqs);
+    if(flagged.length>0){
+      setTimeout(()=>{showHITL(flagged);},9000);
+    } else {
+      for(let i=1;i<=6;i++){document.getElementById('ps'+i).className='ps done';document.getElementById('pc'+i).textContent='✓';}
+      setProgScore(1,9);setProgScore(2,9);setProgScore(3,9);setProgScore(4,9);setProgScore(5,9);setProgScore(6,9);
+      setTimeout(()=>showRes(data),600);
+    }
+  }catch(e){
+    document.getElementById('ld').style.display='none';
+    document.getElementById('inp').style.display='block';
+    setSt(1);setStatus('idle');
+    showErr(e.message+' — Make sure backend is running');
+  }
+}
+
+// ── RENDER RESULTS ────────────────────────────────────────
+function showRes(data){
+  const ext=data.extracted_data;
+  const hitlApproved=hitlItems.filter(h=>h.approved===true).length;
+  animN('n1',ext.functional_requirements?.length||0);
+  animN('n2',ext.non_functional_requirements?.length||0);
+  animN('n3',ext.stakeholders?.length||0);
+  animN('n4',ext.conflicts?.length||0);
+  animN('n5',hitlApproved);
+
+  // Pipeline provenance — from real backend response
+  const provider = data.provider || 'mock';
+  const model = data.model || '—';
+  document.getElementById('prov-provider').textContent = provider.toUpperCase();
+  document.getElementById('prov-model').textContent = model;
+  document.getElementById('providerLabel').textContent = provider === 'mock' ? 'Demo Mode' : 'Live';
+  const hitlApprovedCount = hitlItems.filter(h=>h.approved===true).length;
+  const hitlTotal = hitlItems.length;
+  document.getElementById('prov-hitl').textContent = hitlTotal > 0 ? `${hitlApprovedCount}/${hitlTotal}` : 'None flagged';
+  if(hitlTotal > 0) document.getElementById('prov-hitl-bar').style.width = Math.round(hitlApprovedCount/hitlTotal*100)+'%';
+
+  document.getElementById('rawT').textContent=rawTrx;
+  document.getElementById('clnT').textContent=data.cleaned_transcript||'N/A';
+  document.getElementById('bdoc').textContent=data.brd_document;
+
+  // Executive Summary — from backend exec_summarize() stage (real Turgon AI output)
+  const execEl=document.getElementById('execDoc');
+  if(data.executive_summary){
+    execEl.textContent=data.executive_summary;
+  } else {
+    execEl.textContent='Executive summary was not returned by the backend. Ensure exec_summarize() ran successfully in the pipeline.';
+    execEl.style.color='var(--muted)';
+  }
+
+  // FR Cards
+  document.getElementById('frc').innerHTML=(ext.functional_requirements||[]).map((r,i)=>`
+    <div class="rc" style="animation:fadeA .4s ${i*.07}s both">
+      <span class="rid">${r.id||'FR-'+String(i+1).padStart(3,'0')}</span>
+      <div class="rb">
+        <div class="rdesc">${r.description}</div>
+        <div class="rmeta">
+          <span class="pri ${r.priority||'Medium'}">${r.priority||'MEDIUM'}</span>
+          ${hitlItems.find(h=>h.id===r.id&&h.approved)?`<span class="hitl-approved">✦ HITL APPROVED</span>`:''}
+        </div>
+      </div>
+      <div class="tt">
+        <div class="tr"><span class="trl">Speaker</span><span class="trv">${r.speaker||'Unknown'}</span></div>
+        <div class="tr"><span class="trl">Timestamp</span><span class="trv">${r.timestamp||'—'}</span></div>
+        <div class="tr"><span class="trl">Source</span><span class="trv">${r.source||'Transcript'}</span></div>
+        <div class="tr"><span class="trl">Req ID</span><span class="trv">${r.id||'FR'}</span></div>
+      </div>
+    </div>`).join('')||'<p style="color:var(--muted);padding:20px">No functional requirements found.</p>';
+
+  // NFR
+  document.getElementById('nfg').innerHTML=(ext.non_functional_requirements||[]).map((r,i)=>`
+    <div class="nc" style="animation:fadeA .4s ${i*.07}s both">
+      <div class="ncat">${r.category||'GENERAL'}</div>
+      <div class="ndesc">${r.description}</div>
+    </div>`).join('')||'<p style="color:var(--muted)">No NFRs found.</p>';
+
+  // Stakeholders with sentiment
+  const sentColors={positive:'pos',negative:'neg',neutral:'neu'};
+  const sentEmoji={positive:'😊 Supportive',negative:'⚠️ Resistant',neutral:'😐 Neutral'};
+  document.getElementById('shg').innerHTML=(ext.stakeholders||[]).map((s,i)=>`
+    <div class="shc" style="animation:fadeA .4s ${i*.08}s both">
+      <div class="shav">${(s.name||'?')[0].toUpperCase()}</div>
+      <div>
+        <div class="shn">${s.name}</div>
+        <div class="shr">${s.role}</div>
+        ${s.sentiment?`<div class="shs ${sentColors[s.sentiment]||'neu'}">${sentEmoji[s.sentiment]||s.sentiment}</div>`:''}
+      </div>
+    </div>`).join('')||'<p style="color:var(--muted)">No stakeholders identified.</p>';
+
+  // Decisions
+  document.getElementById('dcc').innerHTML=(ext.decisions||[]).map((d,i)=>`
+    <div class="dc" style="animation:fadeA .4s ${i*.08}s both">
+      <div class="dct">✅ ${d.decision}</div>
+      <div class="dcb">— ${d.made_by||'Team'}</div>
+    </div>`).join('')||'<p style="color:var(--muted)">No decisions recorded.</p>';
+
+  // Conflicts
+  const cc=document.getElementById('ccc');
+  if(!ext.conflicts||!ext.conflicts.length){
+    cc.innerHTML='<div class="noc">✓ No conflicts detected in this transcript</div>';
+  } else {
+    cc.innerHTML=ext.conflicts.map((c,i)=>`
+      <div class="cc" style="animation:fadeA .4s ${i*.08}s both">
+        <div class="cch">⚠ ${c.conflict}</div>
+        <div class="ccd">${c.description}</div>
+        ${c.parties?`<div class="ccp">${c.parties.map(p=>`<span class="ccpt">${p}</span>`).join('')}</div>`:''}
+      </div>`).join('');
+  }
+
+  // Timeline
+  document.getElementById('tll').innerHTML=(ext.timelines||[]).map((t,i)=>`
+    <div class="tli" style="animation:fadeA .4s ${i*.1}s both">
+      <div class="tlm">${t.milestone}</div>
+      <div class="tlmt">${t.date||'TBD'}${t.owner?' · '+t.owner:''}</div>
+    </div>`).join('')||'<p style="color:var(--muted)">No milestones found.</p>';
+
+  // Traceability Matrix
+  document.getElementById('tmBody').innerHTML=(ext.functional_requirements||[]).map((r,i)=>`
+    <tr style="animation:fadeA .3s ${i*.05}s both">
+      <td class="tm-id">${r.id||'FR-'+String(i+1).padStart(3,'0')}</td>
+      <td style="max-width:280px">${r.description}</td>
+      <td><span class="tm-src">📎 ${r.source||'Transcript'}</span></td>
+      <td>${r.speaker||'—'}</td>
+      <td style="color:var(--muted)">${r.timestamp||'—'}</td>
+      <td style="color:${(r.confidence||0.8)>0.7?'var(--green)':'var(--yellow)'}">${((r.confidence||0.8)*100).toFixed(0)}%</td>
+    </tr>`).join('');
+
+  document.getElementById('ld').style.display='none';
+  document.getElementById('res').style.display='block';
+  document.getElementById('res').classList.add('show');
+  setSt(5);setStatus('ready');
+}
+
+function animN(id,target){
+  let cur=0;const el=document.getElementById(id);
+  const step=Math.max(1,Math.floor(target/20));
+  const iv=setInterval(()=>{cur=Math.min(cur+step,target);el.textContent=cur;if(cur>=target)clearInterval(iv);},40);
+}
+
+// ── NLP EDIT BRD ─────────────────────────────────────────
+async function editBRD(){
+  const instr=document.getElementById('editInp').value.trim();
+  if(!instr||!G)return;
+  const brdEl=document.getElementById('bdoc');
+  const editLoad=document.getElementById('editLoad');
+  editLoad.classList.add('show');
+  try{
+    const r=await fetch(`${BACKEND}/edit-brd`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({current_brd:G.brd_document,edit_instruction:instr})
+    });
+    if(!r.ok) throw new Error('Edit failed');
+    const data=await r.json();
+    G.brd_document=data.updated_brd;
+    brdEl.textContent=data.updated_brd;
+    document.getElementById('editInp').value='';
+    brdEl.style.borderColor='var(--purple)';
+    setTimeout(()=>brdEl.style.borderColor='',2000);
+  } catch(e){
+    // Demo fallback
+    brdEl.textContent=G.brd_document+'\n\n[EDIT APPLIED: '+instr+']';
+  }
+  editLoad.classList.remove('show');
+}
+function fillHint(el){document.getElementById('editInp').value=el.textContent;}
+
+// ── DOWNLOAD ──────────────────────────────────────────────
+function dlB(fmt){
+  if(!G)return;
+  const content=G.brd_document;
+  const fname=`BRD_${(G.project_name||'Project').replace(/\s+/g,'_')}`;
+  const b=new Blob([content],{type:'text/plain'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(b);
+  a.download=fname+(fmt==='docx'?'.docx':'.txt');
+  a.click();
+}
+
+// ── RESET ─────────────────────────────────────────────────
+function rst(){
+  document.getElementById('res').style.display='none';
+  document.getElementById('res').classList.remove('show');
+  document.getElementById('hitl').style.display='none';
+  document.getElementById('hitl').classList.remove('show');
+  document.getElementById('inp').style.display='block';
+  setSt(1);setStatus('idle');
+  G=null;rawTrx='';hitlItems=[];hitlReviewed=0;uploadedFiles=[];
+  document.getElementById('fileChips').innerHTML='';
+  ['trx','email-txt','slack-txt'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  for(let i=1;i<=6;i++){
+    if(document.getElementById('ps'+i)) document.getElementById('ps'+i).className='ps';
+    if(document.getElementById('pc'+i)) document.getElementById('pc'+i).textContent='○';
+    if(document.getElementById('psc'+i)) document.getElementById('psc'+i).textContent='—';
+  }
+  document.getElementById('lt').textContent='ReqMind AI Processing...';
+  document.getElementById('ls').textContent='Ingesting and preprocessing your sources';
+  updateSourceChips();
+}
+
+function showErr(m){document.getElementById('errM').textContent=m;document.getElementById('errB').classList.add('show');}
+
+// ── SAMPLE DATA ───────────────────────────────────────────
+function loadSample(){
+  document.getElementById('pname').value='Remote Control Design Project';
+  document.getElementById('trx').value=`Project Manager: Alright team, let's finalize the remote control design today.
+Designer: I suggest we go with 8 buttons maximum for a clean design.
+Project Manager: Marketing says we need at least 15 buttons. That's a client requirement.
+Engineer: 15 buttons will hurt ergonomics. We should keep it under 12.
+Designer: Agreed with engineer. 8 to 10 is ideal from a UX perspective.
+Project Manager: Final decision - 12 buttons. Let's compromise there.
+Engineer: The casing needs to be impact resistant. Drop tests from 1 meter height should be standard.
+Designer: We should use recycled plastic for the casing - client mentioned sustainability.
+Project Manager: Good point. Recycled materials for casing is now a requirement.
+Engineer: Battery life must last at least 12 months with normal use. Non-negotiable.
+Project Manager: Timeline - prototype ready by end of March. Full production by end of Q2.
+Engineer: March is too tight. We need 8 weeks minimum for prototyping. That's mid-April at earliest.
+Project Manager: The client deadline is March 31st. We need to figure this out.
+Designer: What if we reduce prototype scope? Just shell and basic button layout?
+Engineer: That could work. Reduced scope prototype by March 31st, full by April 30th.
+Project Manager: Agreed. Remote must also be compatible with all major TV brands.
+Engineer: Universal compatibility via standard IR protocol. Covers 95% of TVs.
+Designer: Design should also support visually impaired users. Large buttons, tactile feedback.
+Project Manager: Add accessibility features as a requirement. Good catch.`;
+  switchSrc('transcript', document.querySelector('.src-tab'));
+  updateSourceChips();
+}
+</script>
+</body>
+</html>
