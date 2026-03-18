@@ -44,18 +44,31 @@ Lacking structured conflict detection
 
 ReqMind-AI/
 │
+
 ├── backend/
+
 │   ├── main.py
+
 │   ├── requirements.txt
+
 │   └── Dockerfile
+
 │
+
 ├── frontend/
+
 │   └── index.html
+
 │
+
 ├── assets/
+
 │   ├── screenshot1.png
+
 │   └── demo-thumbnail.png
+
 │
+
 ├── README.md
 
 
