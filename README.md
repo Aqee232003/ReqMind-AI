@@ -1,7 +1,7 @@
 🚀 ReqMind AI
 AI-Powered Business Requirements Document Generator
 
-RAG | FastAPI | FAISS | Gemini | Cloud Deployment
+RAG | FastAPI | FAISS | Gemini | Cloud Deploymentt
 
 🔍 Overview
 
@@ -37,7 +37,7 @@ Difficult to trace back to original discussions
 
 Lacking structured conflict detection
 
-ReqMind AI automates this process while preserving traceability and interpretability.
+**ReqMind AI automates this process while preserving traceability and interpretability.**
 
 🏗️ System Architecture
 
@@ -62,23 +62,39 @@ BRD Template Generation – Structured enterprise-ready format
 Executive Summary Generation – Context-aware summarization
 
 🧠 Technical Stack
+
 Component	Technology
+
 Backend API	FastAPI
+
 LLM	Gemini (gemini-2.0-flash)
+
 Embeddings	all-MiniLM-L6-v2
+
 Vector Database	FAISS
+
 Deployment	Google Cloud Run
+
 Containerization	Docker
+
 📊 Core Capabilities
 
 ✔ Functional & Non-Functional Requirement Extraction
+
 ✔ Stakeholder Identification & Sentiment Mapping
+
 ✔ Timeline & Milestone Detection
+
 ✔ Conflict & Risk Detection
+
 ✔ Confidence Scoring per Requirement
+
 ✔ Human-in-the-Loop (HITL) Flagging
+
 ✔ Traceability Matrix Generation
+
 ✔ Iterative AI-Based BRD Editing
+
 ✔ Multi-source Input Normalization
 
 Each requirement includes:
