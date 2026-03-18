@@ -41,6 +41,25 @@ Lacking structured conflict detection
 
 🏗️ System Architecture
 
+
+ReqMind-AI/
+│
+├── backend/
+│   ├── main.py
+│   ├── requirements.txt
+│   └── Dockerfile
+│
+├── frontend/
+│   └── index.html
+│
+├── assets/
+│   ├── screenshot1.png
+│   └── demo-thumbnail.png
+│
+├── README.md
+
+
+
 The system is built as a 9-stage intelligent pipeline:
 
 Input Ingestion – Supports transcripts, email threads, Slack chats, AMI dataset
